@@ -1,0 +1,17 @@
+README.md
+pyproject.toml
+setup.py
+src/minicahe/__init__.py
+src/minicahe/cli.py
+src/minicahe/compressor.py
+src/minicahe/py.typed
+src/minicahe/stats.py
+src/minicahe/tokenizer.py
+src/minicahe.egg-info/PKG-INFO
+src/minicahe.egg-info/SOURCES.txt
+src/minicahe.egg-info/dependency_links.txt
+src/minicahe.egg-info/entry_points.txt
+src/minicahe.egg-info/requires.txt
+src/minicahe.egg-info/top_level.txt
+tests/test_compressor.py
+tests/test_tokenizer.py

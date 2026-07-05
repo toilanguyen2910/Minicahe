@@ -1,0 +1,15 @@
+{
+  "name": "minicahe",
+  "version": "0.1.0",
+  "description": "Minicahe - talk smart, use fewer tokens",
+  "commands": [
+    {
+      "name": "minicahe",
+      "description": "Compress text to save tokens",
+      "trigger": "minicahe"
+    }
+  ],
+  "hooks": {
+    "pre_turn": "minicahe compress --show-stats"
+  }
+}
