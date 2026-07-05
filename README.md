@@ -13,7 +13,9 @@ By acting as a proxy layer before sending text to Large Language Models (LLMs), 
 ## ✨ Features
 
 - 🚀 **Extreme Token Reduction**: Consistently halves your token usage (50%+ reduction on average).
-- 🧠 **100% Keyword Preservation**: Unlike naive summarizers, Minicahe's deduplication algorithm ensures no critical domain-specific keywords are lost.
+- 🧠 **Smart Code Compression**: Dedicated mode for Python code to strip docstrings, comments, and empty lines without breaking AST.
+- 🔄 **Auto-Acronymizer**: Automatically finds frequent long phrases and replaces them with acronyms.
+- 🔑 **100% Keyword Preservation**: Ensures no critical domain-specific keywords are lost.
 - ⚡ **Zero-Latency**: Pure Python string manipulation. No LLM calls required to compress text.
 - 📊 **Tiktoken Integration**: Accurate token counting using OpenAI's `tiktoken` (with a fast fallback estimator).
 - 🛠️ **CLI Ready**: Compress strings, files, or pipe data directly from your terminal.
@@ -25,10 +27,13 @@ To achieve the impossible balance of halving token size while keeping LLM compre
 1. **Keyword Deduplication**: 
    If a long technical keyword (e.g., `transformer`, `architecture`) appears multiple times in your context, Minicahe keeps it once and drops the redundancies. The LLM still receives the exact vocabulary needed for its attention mechanism, but you save massive amounts of tokens.
    
-2. **Extreme Lexical Trimming**: 
+2. **Auto-Acronymizer**: 
+   Dynamically scans for frequent long N-grams (e.g. "natural language processing") and injects acronyms (e.g. "NLP") to save tokens without losing meaning.
+
+3. **Extreme Lexical Trimming**: 
    Minicahe ruthlessly strips out all stop words `< 4` characters (`the`, `a`, `to`, `is`, `in`, `on`, etc.) and heavily filters longer filler words (`which`, `would`, `should`, `about`, `there`). LLMs are incredibly robust to broken grammar and can perfectly reconstruct the meaning from the remaining keyword salad.
    
-3. **Whitespace Optimization**: 
+4. **Whitespace Optimization**: 
    Removes unnecessary spaces around punctuation (e.g., `word ,` -> `word,`). Tiktoken tokenizes punctuation correctly without spaces, giving you cleaner outputs without generating garbage tokens.
 
 ## 🚀 Quick Start
@@ -50,11 +55,14 @@ pip install -e .
 # Compress an inline string (Aggressive Mode)
 minicahe compress --aggressive "In the field of natural language processing, transformer-based models have become the dominant approach for a wide range of tasks."
 
-# Compress a file
+# Compress a text file
 minicahe compress --file data/long_log.txt --aggressive
 
+# Compress a Python codebase file (Strips comments & docstrings)
+minicahe compress --file src/main.py --code
+
 # Pipe mode (Great for CI/CD or logging)
-cat my_code.py | minicahe compress --aggressive > compressed_code.txt
+cat my_code.py | minicahe compress --code > compressed_code.py
 
 # View your overall token savings stats
 minicahe stats
@@ -82,11 +90,12 @@ Mode AGGRESSIVE:
 
 ```text
 src/minicahe/
-├── __init__.py    # Package initialization
-├── cli.py         # Click CLI application
-├── compressor.py  # Core Engine (Deduplication, Trimming, Phrase mapping)
-├── tokenizer.py   # Token calculation (Tiktoken + fallback)
-└── stats.py       # Global savings tracker
+├── __init__.py          # Package initialization
+├── cli.py               # Click CLI application
+├── compressor.py        # Core Engine (Deduplication, Trimming, Phrase mapping)
+├── code_compressor.py   # Specialized Python AST/Token compressor
+├── tokenizer.py         # Token calculation (Tiktoken + fallback)
+└── stats.py             # Global savings tracker
 ```
 
 ## 💡 Use Cases

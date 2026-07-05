@@ -1,4 +1,4 @@
-﻿"""CLI module for Minicahe.
+"""CLI module for Minicahe.
 
 Command-line interface using click.
 """
@@ -30,9 +30,10 @@ def cli(verbose):
 @click.argument("text", required=False)
 @click.option("--file", "-f", type=click.Path(exists=True), help="Path to file to compress")
 @click.option("--aggressive", "-a", is_flag=True, help="Use aggressive compression")
+@click.option("--code", "-c", is_flag=True, help="Use code-specific compression (strip comments/docstrings)")
 @click.option("--show-stats", "-s", is_flag=True, help="Show compression statistics")
 @click.option("--model", "-m", default="gpt-4", help="Model for token counting (default: gpt-4)")
-def compress(text, file, aggressive, show_stats, model):
+def compress(text, file, aggressive, code, show_stats, model):
     """Compress text to use fewer tokens.
 
     Provide TEXT as a string or use --file to compress a file.
@@ -54,7 +55,7 @@ def compress(text, file, aggressive, show_stats, model):
         sys.exit(1)
 
     # Compress
-    compressor = Compressor(aggressive=aggressive)
+    compressor = Compressor(aggressive=aggressive, code=code)
     compressed = compressor.compress(original)
 
     # Calculate savings
@@ -73,8 +74,12 @@ def compress(text, file, aggressive, show_stats, model):
         click.echo(f"Compressed:     {savings['compressed_tokens']:>8} tokens  ({savings['compressed_chars']:>6} chars)")
         click.echo(f"Saved:          {savings['savings']:>8} tokens  ({savings['savings_pct']}%)")
         click.echo()
-        click.echo(f"Phrases replaced: {compressor.get_stats()['phrases_replaced']}")
-        click.echo(f"Filler removed:    {compressor.get_stats()['filler_removed']}")
+        click.echo(f"Phrases replaced: {compressor.get_stats().get('phrases_replaced', 0)}")
+        click.echo(f"Filler removed:    {compressor.get_stats().get('filler_removed', 0)}")
+        click.echo(f"Acronyms injected: {compressor.get_stats().get('acronym_injected', 0)}")
+        if code:
+            click.echo(f"Comments removed:  {compressor.get_stats().get('comments_removed', 0)}")
+            click.echo(f"Docstrings rm:     {compressor.get_stats().get('docstrings_removed', 0)}")
         click.echo(f"{'-' * 50}")
         click.echo()
         click.echo(compressed)
