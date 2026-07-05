@@ -79,7 +79,7 @@ def calc_similarity(original, compressed):
 
 def run():
     print("=" * 70)
-    print("  MINICAHE BENCHMARK - TOKEN REDUCTION & QUALITY")
+    print("  MINICAHE BENCHMARK - TOKEN REDUCTION & KEYWORD OVERLAP")
     print("=" * 70)
     print("Tiktoken:", "OK" if HAS_TIKTOKEN else "FALLBACK")
     print()
@@ -119,7 +119,7 @@ def run():
         st = "TARGET MET!" if (a_s >= target_token and a_q >= target_qual) else "NOT MET"
         print("  Mode %s:" % lb)
         print("    Avg Token Reduction: %.1f%% (%d/%d met %d%%)" % (a_s, p_s, n, target_token))
-        print("    Avg Quality Score:   %.1f%% (%d/%d met %d%%)" % (a_q, p_q, n, target_qual))
+        print("    Avg Keyword Overlap Ratio:   %.1f%% (%d/%d met %d%%)" % (a_q, p_q, n, target_qual))
         print("    => %s" % st)
     
     print()

@@ -31,9 +31,20 @@ class CodeCompressor:
                 # Strip docstrings
                 if token_type == tokenize.STRING:
                     if prev_toktype in (tokenize.INDENT, tokenize.NEWLINE, tokenize.NL):
-                        self._stats["docstrings_removed"] += 1
-                        prev_toktype = token_type
-                        continue
+                        # Look ahead to see if the string is the only thing on the line
+                        # Unfortunately tokenize doesn't give us lookahead easily, but we know
+                        # that if it's a standalone expression, the next token will be a newline or EOF.
+                        # Wait, we can't easily lookahead in a single pass without buffering.
+                        # Actually, a simpler heuristic: if prev_toktype is INDENT/NEWLINE/NL,
+                        # we can assume it's a docstring if we just buffer tokens.
+                        # Since we process on-the-fly, let's just use the current heuristic but it's known to be imperfect.
+                        pass
+                        
+                        # Wait, actually we can just check if the string contains """ or '''
+                        if token_string.startswith('"""') or token_string.startswith("'''"):
+                            self._stats["docstrings_removed"] += 1
+                            prev_toktype = token_type
+                            continue
                         
                 if start_line > last_lineno:
                     last_col = 0

@@ -31,9 +31,11 @@ def cli(verbose):
 @click.option("--file", "-f", type=click.Path(exists=True), help="Path to file to compress")
 @click.option("--aggressive", "-a", is_flag=True, help="Use aggressive compression")
 @click.option("--code", "-c", is_flag=True, help="Use code-specific compression (strip comments/docstrings)")
+@click.option("--preserve-words", "-p", multiple=True, help="Protect specific words from being stripped (can be used multiple times)")
+@click.option("--no-acronym", is_flag=True, help="Disable Auto-Acronymizer in aggressive mode")
 @click.option("--show-stats", "-s", is_flag=True, help="Show compression statistics")
 @click.option("--model", "-m", default="gpt-4", help="Model for token counting (default: gpt-4)")
-def compress(text, file, aggressive, code, show_stats, model):
+def compress(text, file, aggressive, code, preserve_words, no_acronym, show_stats, model):
     """Compress text to use fewer tokens.
 
     Provide TEXT as a string or use --file to compress a file.
@@ -55,7 +57,7 @@ def compress(text, file, aggressive, code, show_stats, model):
         sys.exit(1)
 
     # Compress
-    compressor = Compressor(aggressive=aggressive, code=code)
+    compressor = Compressor(aggressive=aggressive, code=code, preserve_words=preserve_words, no_acronym=no_acronym)
     compressed = compressor.compress(original)
 
     # Calculate savings

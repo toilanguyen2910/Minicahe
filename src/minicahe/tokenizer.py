@@ -1,4 +1,4 @@
-﻿"""Tokenizer module for Minicahe.
+"""Tokenizer module for Minicahe.
 
 Handles token counting using tiktoken with fallback.
 """

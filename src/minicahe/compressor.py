@@ -7,20 +7,24 @@ from collections import Counter
 from minicahe.tokenizer import count_tokens
 from minicahe.code_compressor import CodeCompressor
 
-STRIP_CHARS = """.,!?;:"'()[]{}"""
-
 PHRASE_MAP_V2 = {
     "in order to": "to"
 }
 
+TECH_WHITELIST = {'api', 'id', 'url', 'sql', 'get', 'put', 'post', 'app', 'v2', 'v3'}
+
 class CompressorV2:
-    def __init__(self, aggressive=False, code=False):
+    def __init__(self, aggressive=False, code=False, preserve_words=None, no_acronym=False):
         self.aggressive = aggressive
         self.code = code
+        self.no_acronym = no_acronym
+        self.preserve_words = set(preserve_words) if preserve_words else set()
+        self.preserve_words.update(TECH_WHITELIST)
+        
         self._stats = {"phrases_replaced": 0, "filler_removed": 0,
                        "acronym_injected": 0, "whitespace_normalized": 0}
         self.drop_list = {
-            'the', 'a', 'an', 'to', 'of', 'in', 'is', 'it', 'we', 'on', 'at', 'by', 'as', 'or', 'for', 'be', 'and', 'with', 'that', 'this', 'have', 'from', 'they', 'are', 'were', 'been', 'some', 'very', 'really', 'just', 'actually', 'basically', 'which', 'could', 'would', 'should', 'there', 'their', 'about', 'these', 'those', 'then', 'than', 'can', 'will', 'has', 'had', 'do', 'does', 'did', 'but', 'if', 'so', 'out', 'up', 'down', 'over', 'under', 'again', 'further', 'once', 'here', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'too', 's', 't', 'don', 'now', 'am', 'also', 'into', 'first', 'said', 'new', 'one', 'two', 'what', 'who', 'whom', 'whose', 'our', 'my', 'your', 'his', 'her', 'its', 'et', 'al', 'way', 'key', 'use', 'was'
+            'the', 'a', 'an', 'to', 'of', 'in', 'is', 'it', 'we', 'on', 'at', 'by', 'as', 'or', 'for', 'be', 'and', 'with', 'that', 'this', 'have', 'from', 'they', 'are', 'were', 'been', 'some', 'very', 'really', 'just', 'actually', 'basically', 'which', 'could', 'would', 'should', 'there', 'their', 'about', 'these', 'those', 'then', 'than', 'can', 'will', 'has', 'had', 'do', 'does', 'did', 'but', 'if', 'so', 'out', 'up', 'down', 'over', 'under', 'again', 'further', 'once', 'here', 'when', 'where', 'why', 'how', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'too', 's', 't', 'don', 'now', 'am', 'also', 'into', 'first', 'said', 'new', 'one', 'two', 'what', 'who', 'whom', 'whose', 'our', 'my', 'your', 'his', 'her', 'its', 'et', 'al', 'way'
         }
 
     def compress(self, text):
@@ -43,7 +47,8 @@ class CompressorV2:
 
         # Phase 2 & 3: Extreme compression (Aggressive)
         if self.aggressive:
-            text = self._auto_acronymize(text)
+            if not self.no_acronym:
+                text = self._auto_acronymize(text)
             words = text.split()
             
             kept = []
@@ -51,6 +56,13 @@ class CompressorV2:
             for w in words:
                 clean = re.sub(r'[^a-zA-Z]', '', w).lower()
                 
+                # Protect whitelisted words (length < 4 won't matter, dedup won't affect them)
+                if clean in self.preserve_words:
+                    kept.append(w)
+                    if w.endswith('.') or w.endswith('!') or w.endswith('?'):
+                        seen_keywords.clear()
+                    continue
+
                 # Drop all words < 4 letters, and heavily filter common long words
                 if len(clean) < 4:
                     self._stats["filler_removed"] += 1
@@ -68,6 +80,10 @@ class CompressorV2:
                     seen_keywords.add(clean)
                     
                 kept.append(w)
+                
+                # Reset keyword deduplication on sentence boundaries
+                if w.endswith('.') or w.endswith('!') or w.endswith('?'):
+                    seen_keywords.clear()
             
             text = " ".join(kept)
 
@@ -86,6 +102,9 @@ class CompressorV2:
         words = text.split()
         if len(words) < 10: return text
         
+        # Build a set of all original words to avoid acronym collisions with real words
+        original_words = {re.sub(r'[^a-zA-Z]', '', w).lower() for w in words}
+        
         candidates = []
         for n in [4, 3]:
             ngrams = []
@@ -101,19 +120,28 @@ class CompressorV2:
                     if gram_words[0] not in self.drop_list and gram_words[-1] not in self.drop_list:
                         candidates.append(ngram)
                         
+        used_acronyms = set()
         for ngram in candidates:
             acronym = "".join([w[0].upper() for w in ngram.split()])
+            
+            # Prevent acronym collisions (Bug #4 and #5)
+            if acronym.lower() in original_words or acronym in used_acronyms:
+                continue
+                
+            used_acronyms.add(acronym)
+            
             pattern = re.compile(re.escape(ngram), re.IGNORECASE)
             # count occurrences
             matches = len(pattern.findall(text))
             if matches > 0:
                 text = pattern.sub(acronym, text)
+                self.preserve_words.add(acronym.lower())
                 self._stats["acronym_injected"] += matches
                 
         return text
 
 Compressor = CompressorV2
 
-def compress_text(text: str, aggressive: bool = False, code: bool = False) -> str:
-    compressor = CompressorV2(aggressive=aggressive, code=code)
+def compress_text(text: str, aggressive: bool = False, code: bool = False, preserve_words: list = None, no_acronym: bool = False) -> str:
+    compressor = CompressorV2(aggressive=aggressive, code=code, preserve_words=preserve_words, no_acronym=no_acronym)
     return compressor.compress(text)

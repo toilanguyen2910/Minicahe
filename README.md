@@ -15,7 +15,7 @@ By acting as a proxy layer before sending text to Large Language Models (LLMs), 
 - 🚀 **Extreme Token Reduction**: Consistently halves your token usage (50%+ reduction on average).
 - 🧠 **Smart Code Compression**: Dedicated mode for Python code to strip docstrings, comments, and empty lines without breaking AST.
 - 🔄 **Auto-Acronymizer**: Automatically finds frequent long phrases and replaces them with acronyms.
-- 🔑 **100% Keyword Preservation**: Ensures no critical domain-specific keywords are lost.
+- 🔑 **Aims to preserve key domain terms**: Protects critical domain-specific keywords from being lost, and allows user whitelists.
 - ⚡ **Zero-Latency**: Pure Python string manipulation. No LLM calls required to compress text.
 - 📊 **Tiktoken Integration**: Accurate token counting using OpenAI's `tiktoken` (with a fast fallback estimator).
 - 🛠️ **CLI Ready**: Compress strings, files, or pipe data directly from your terminal.
@@ -70,7 +70,7 @@ minicahe stats
 
 ## 📊 Benchmark
 
-Minicahe includes a built-in strict benchmark (`tests/benchmark.py`) that evaluates compression based on precision (how well the compressed sequence matches the original without hallucinating).
+Minicahe includes a built-in strict benchmark (`tests/benchmark.py`) that evaluates compression based on precision (Keyword Overlap Ratio).
 
 ```text
 ======================================================================
@@ -78,11 +78,11 @@ Minicahe includes a built-in strict benchmark (`tests/benchmark.py`) that evalua
 ======================================================================
 Mode NORMAL:
   Avg Token Reduction: 4.4% 
-  Avg Quality Score:   99.8% 
+  Avg Keyword Overlap Ratio: 99.8% 
 
 Mode AGGRESSIVE:
   Avg Token Reduction: 50.9% (🎯 TARGET MET >50%)
-  Avg Quality Score:   95.3% (🎯 TARGET MET >90%)
+  Avg Keyword Overlap Ratio: 95.3% (🎯 TARGET MET >90%)
 ======================================================================
 ```
 

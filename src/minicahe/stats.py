@@ -1,4 +1,4 @@
-﻿"""Stats module for Minicahe.
+"""Stats module for Minicahe.
 
 Tracks token savings and compression history.
 """
