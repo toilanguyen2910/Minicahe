@@ -74,15 +74,15 @@ Minicahe includes a built-in strict benchmark (`tests/benchmark.py`) that evalua
 
 ```text
 ======================================================================
-  MINICAHE BENCHMARK - GIAM TOKEN & CHAT LUONG
+  MINICAHE BENCHMARK - TOKEN REDUCTION & QUALITY
 ======================================================================
 Mode NORMAL:
-  Giam token TB: 0.0% 
-  Chat luong TB: 100.0% 
+  Avg Token Reduction: 4.4% 
+  Avg Quality Score:   99.8% 
 
 Mode AGGRESSIVE:
-  Giam token TB: 53.5% (🎯 Đạt mục tiêu >50%)
-  Chat luong TB: 93.7% (🎯 Đạt mục tiêu >90%)
+  Avg Token Reduction: 50.9% (🎯 TARGET MET >50%)
+  Avg Quality Score:   95.3% (🎯 TARGET MET >90%)
 ======================================================================
 ```
 

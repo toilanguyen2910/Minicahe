@@ -79,7 +79,7 @@ def calc_similarity(original, compressed):
 
 def run():
     print("=" * 70)
-    print("  MINICAHE BENCHMARK - GIAM TOKEN & CHAT LUONG")
+    print("  MINICAHE BENCHMARK - TOKEN REDUCTION & QUALITY")
     print("=" * 70)
     print("Tiktoken:", "OK" if HAS_TIKTOKEN else "FALLBACK")
     print()
@@ -102,12 +102,12 @@ def run():
             ql = round(calc_similarity(t, c) * 100, 1)
             tk = "OK" if sp >= target_token else "NO"
             qk = "OK" if ql >= target_qual else "NO"
-            print("  [%9s] %4d tok | -%5.1f%% [%s] | CL: %5.1f%% [%s]" % (mn, ct, sp, tk, ql, qk))
+            print("  [%9s] %4d tok | -%5.1f%% [%s] | QL: %5.1f%% [%s]" % (mn, ct, sp, tk, ql, qk))
             (ar if m else nr).append({"s": sp, "q": ql})
     
     print()
     print("=" * 70)
-    print("  KET QUA TONG HOP")
+    print("  OVERALL RESULTS")
     print("=" * 70)
     
     for lb, rs in [("NORMAL", nr), ("AGGRESSIVE", ar)]:
@@ -116,10 +116,10 @@ def run():
         p_s = sum(1 for r in rs if r["s"] >= target_token)
         p_q = sum(1 for r in rs if r["q"] >= target_qual)
         n = len(rs)
-        st = "DAT MUC TIEU!" if (a_s >= target_token and a_q >= target_qual) else "CHUA DAT"
+        st = "TARGET MET!" if (a_s >= target_token and a_q >= target_qual) else "NOT MET"
         print("  Mode %s:" % lb)
-        print("    Giam token TB: %.1f%% (%d/%d dat %d%%)" % (a_s, p_s, n, target_token))
-        print("    Chat luong TB: %.1f%% (%d/%d dat %d%%)" % (a_q, p_q, n, target_qual))
+        print("    Avg Token Reduction: %.1f%% (%d/%d met %d%%)" % (a_s, p_s, n, target_token))
+        print("    Avg Quality Score:   %.1f%% (%d/%d met %d%%)" % (a_q, p_q, n, target_qual))
         print("    => %s" % st)
     
     print()
