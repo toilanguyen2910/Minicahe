@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "minicahe"
-version = "0.1.0"
+version = "1.0.0"
 description = "Minicahe - Mini Token Optimizer: talk smart, use fewer tokens"
 readme = "README.md"
 requires-python = ">=3.9"
