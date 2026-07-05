@@ -79,6 +79,20 @@ def test_pii_masking():
     assert "[EMAIL]" in compressed
     assert "[REDACTED]" in compressed
 
+def test_bug_1_and_3_fixes():
+    # Bug 1: key, use, was should not be stripped even though length is 3
+    text1 = "The key feature is that we use this API. Error was caused by null pointer."
+    compressed1 = compress_text(text1, aggressive=True)
+    assert "key" in compressed1.lower()
+    assert "use" in compressed1.lower()
+    assert "was" in compressed1.lower()
+
+    # Bug 3: alphanumeric whitelist like v2, v3 shouldn't be broken by stripping numbers
+    text2 = "Use API v2 to call GET /id and POST /add"
+    compressed2 = compress_text(text2, aggressive=True)
+    assert "v2" in compressed2.lower()
+    # "add" will be dropped because it's < 4 chars and not in whitelist.
+
 if __name__ == "__main__":
     pytest.main([__file__])
 

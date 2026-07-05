@@ -11,7 +11,7 @@ PHRASE_MAP_V2 = {
     "in order to": "to"
 }
 
-TECH_WHITELIST = {'api', 'id', 'url', 'sql', 'get', 'put', 'post', 'app', 'v2', 'v3'}
+TECH_WHITELIST = {'api', 'id', 'url', 'sql', 'get', 'put', 'post', 'app', 'v2', 'v3', 'key', 'use', 'was'}
 LOGICAL_WORDS = {'not', 'no', 'nor', 'none', 'never', 'off', 'out'}
 
 class CompressorV2:
@@ -65,14 +65,18 @@ class CompressorV2:
             kept = []
             seen_keywords = set()
             for w in words:
-                clean = re.sub(r'[^a-zA-Z]', '', w).lower()
+                # Keep alphanumeric for whitelist checking (Bug #3 fix)
+                clean_alnum = re.sub(r'[^a-zA-Z0-9]', '', w).lower()
                 
                 # Protect whitelisted words (length < 4 won't matter, dedup won't affect them)
-                if clean in self.preserve_words:
+                if clean_alnum in self.preserve_words:
                     kept.append(w)
                     if w.endswith('.') or w.endswith('!') or w.endswith('?'):
                         seen_keywords.clear()
                     continue
+
+                # Strip numbers for aggressive filtering / dedup logic
+                clean = re.sub(r'[^a-zA-Z]', '', w).lower()
 
                 # In aggressive mode, drop all words < 4 letters, and filter common long words
                 if self.mode == "aggressive":
