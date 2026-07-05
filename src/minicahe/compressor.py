@@ -12,14 +12,18 @@ PHRASE_MAP_V2 = {
 }
 
 TECH_WHITELIST = {'api', 'id', 'url', 'sql', 'get', 'put', 'post', 'app', 'v2', 'v3'}
+LOGICAL_WORDS = {'not', 'no', 'nor', 'none', 'never', 'off', 'out'}
 
 class CompressorV2:
-    def __init__(self, aggressive=False, code=False, preserve_words=None, no_acronym=False):
-        self.aggressive = aggressive
+    def __init__(self, mode="normal", aggressive=False, code=False, preserve_words=None, no_acronym=False, mask_pii=False):
+        # Support legacy aggressive flag
+        self.mode = "aggressive" if aggressive else mode
         self.code = code
         self.no_acronym = no_acronym
+        self.mask_pii = mask_pii
         self.preserve_words = set(preserve_words) if preserve_words else set()
         self.preserve_words.update(TECH_WHITELIST)
+        self.preserve_words.update(LOGICAL_WORDS)
         
         self._stats = {"phrases_replaced": 0, "filler_removed": 0,
                        "acronym_injected": 0, "whitespace_normalized": 0}
@@ -45,8 +49,15 @@ class CompressorV2:
                 text = pattern.sub(replacement, text)
                 self._stats["phrases_replaced"] += count
 
-        # Phase 2 & 3: Extreme compression (Aggressive)
-        if self.aggressive:
+        # Optional PII Masking
+        if self.mask_pii:
+            # Mask emails
+            text = re.sub(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', '[EMAIL]', text)
+            # Mask phone numbers and credit cards (simple heuristic)
+            text = re.sub(r'(?<!\d)(?:\+?\(?\d[ \-\.\(\)]*){9,15}\d(?!\d)', '[REDACTED]', text)
+
+        # Phase 2 & 3: Extreme compression (Aggressive or Conservative)
+        if self.mode in ("aggressive", "conservative"):
             if not self.no_acronym:
                 text = self._auto_acronymize(text)
             words = text.split()
@@ -63,15 +74,17 @@ class CompressorV2:
                         seen_keywords.clear()
                     continue
 
-                # Drop all words < 4 letters, and heavily filter common long words
-                if len(clean) < 4:
-                    self._stats["filler_removed"] += 1
-                    continue
-                    
-                if clean in self.drop_list:
-                    self._stats["filler_removed"] += 1
-                    continue
+                # In aggressive mode, drop all words < 4 letters, and filter common long words
+                if self.mode == "aggressive":
+                    if len(clean) < 4:
+                        self._stats["filler_removed"] += 1
+                        continue
+                        
+                    if clean in self.drop_list:
+                        self._stats["filler_removed"] += 1
+                        continue
                 
+                # In both aggressive and conservative mode, deduplicate long words
                 if len(clean) >= 4:
                     if clean in seen_keywords:
                         # Drop duplicate keyword to save tokens!
@@ -142,6 +155,6 @@ class CompressorV2:
 
 Compressor = CompressorV2
 
-def compress_text(text: str, aggressive: bool = False, code: bool = False, preserve_words: list = None, no_acronym: bool = False) -> str:
-    compressor = CompressorV2(aggressive=aggressive, code=code, preserve_words=preserve_words, no_acronym=no_acronym)
+def compress_text(text: str, mode: str = "normal", aggressive: bool = False, code: bool = False, preserve_words: list = None, no_acronym: bool = False, mask_pii: bool = False) -> str:
+    compressor = CompressorV2(mode=mode, aggressive=aggressive, code=code, preserve_words=preserve_words, no_acronym=no_acronym, mask_pii=mask_pii)
     return compressor.compress(text)

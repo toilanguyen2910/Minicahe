@@ -16,6 +16,12 @@ class CodeCompressor:
         last_col = 0
         
         try:
+            import ast
+            ast.parse(source_code)
+        except Exception:
+            return self._regex_compress(source_code)
+            
+        try:
             tokens = tokenize.generate_tokens(io_obj.readline)
             for tok in tokens:
                 token_type = tok[0]
@@ -58,8 +64,8 @@ class CodeCompressor:
                     prev_toktype = token_type
                     
         except Exception:
-            # Fallback to original if parsing fails
-            return source_code
+            # Fallback to Regex if parsing fails (Non-Python or broken snippet)
+            return self._regex_compress(source_code)
 
         # Remove empty lines
         lines = out.splitlines()
@@ -74,3 +80,34 @@ class CodeCompressor:
 
     def get_stats(self):
         return dict(self._stats)
+
+    def _regex_compress(self, source_code: str) -> str:
+        """Regex-based fallback for partial snippets or non-Python code."""
+        import re
+        out = source_code
+        removed_count = 0
+        def replacer(m):
+            nonlocal removed_count
+            if m.group(1):
+                return m.group(1)
+            removed_count += 1
+            return ''
+        
+        pattern = r'("(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'|`(?:\\.|[^`\\])*`)|//.*|/\*[\s\S]*?\*/'
+        out = re.sub(pattern, replacer, out)
+        self._stats["comments_removed"] += removed_count
+        
+        # Strip Python line comments (only if safely at start of line to avoid breaking strings)
+        out, count = re.subn(r'(?m)^\s*#.*$', '', out)
+        self._stats["comments_removed"] += count
+        
+        # Remove empty lines
+        lines = out.splitlines()
+        final_lines = []
+        for line in lines:
+            if line.strip():
+                final_lines.append(line)
+            else:
+                self._stats["empty_lines_removed"] += 1
+                
+        return "\n".join(final_lines)

@@ -29,13 +29,15 @@ def cli(verbose):
 @cli.command()
 @click.argument("text", required=False)
 @click.option("--file", "-f", type=click.Path(exists=True), help="Path to file to compress")
-@click.option("--aggressive", "-a", is_flag=True, help="Use aggressive compression")
+@click.option("--aggressive", "-a", is_flag=True, help="Use aggressive compression (Legacy, overrides to mode=aggressive)")
+@click.option("--conservative", is_flag=True, help="Use conservative compression (Dedup keywords, but keep stopwords)")
 @click.option("--code", "-c", is_flag=True, help="Use code-specific compression (strip comments/docstrings)")
+@click.option("--mask-pii", is_flag=True, help="Mask PII (Emails, Phone numbers) before compression")
 @click.option("--preserve-words", "-p", multiple=True, help="Protect specific words from being stripped (can be used multiple times)")
 @click.option("--no-acronym", is_flag=True, help="Disable Auto-Acronymizer in aggressive mode")
 @click.option("--show-stats", "-s", is_flag=True, help="Show compression statistics")
 @click.option("--model", "-m", default="gpt-4", help="Model for token counting (default: gpt-4)")
-def compress(text, file, aggressive, code, preserve_words, no_acronym, show_stats, model):
+def compress(text, file, aggressive, conservative, code, mask_pii, preserve_words, no_acronym, show_stats, model):
     """Compress text to use fewer tokens.
 
     Provide TEXT as a string or use --file to compress a file.
@@ -56,8 +58,15 @@ def compress(text, file, aggressive, code, preserve_words, no_acronym, show_stat
         click.echo("Error: No input provided.", err=True)
         sys.exit(1)
 
+    # Determine mode
+    mode = "normal"
+    if aggressive:
+        mode = "aggressive"
+    elif conservative:
+        mode = "conservative"
+
     # Compress
-    compressor = Compressor(aggressive=aggressive, code=code, preserve_words=preserve_words, no_acronym=no_acronym)
+    compressor = Compressor(mode=mode, code=code, preserve_words=preserve_words, no_acronym=no_acronym, mask_pii=mask_pii)
     compressed = compressor.compress(original)
 
     # Calculate savings
@@ -69,7 +78,7 @@ def compress(text, file, aggressive, code, preserve_words, no_acronym, show_stat
         click.echo(f"[Stats]  Minicahe Compression Report")
         click.echo(f"{'-' * 50}")
         click.echo(f"Source:         {source}")
-        click.echo(f"Mode:           {'Aggressive' if aggressive else 'Normal'}")
+        click.echo(f"Mode:           {mode.capitalize()}")
         click.echo(f"Model:          {model}")
         click.echo()
         click.echo(f"Original:       {savings['original_tokens']:>8} tokens  ({savings['original_chars']:>6} chars)")

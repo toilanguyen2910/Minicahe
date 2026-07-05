@@ -43,5 +43,36 @@ def test_standalone_string_is_stripped():
     assert "This is another standalone string" not in compressed
     assert "This is a normal string" in compressed  # Should NOT be stripped because it's assigned to a variable
 
+def test_universal_code_stripper_fallback():
+    # A snippet of JS code that breaks python parser
+    text = """function calculate(a, b) {
+    /*
+     * This is a block comment
+     */
+    // This is a line comment
+    let sum = a + b;
+    return sum;
+}
+"""
+    # This will fail ast/tokenize and fallback to _regex_compress
+    compressed = compress_text(text, aggressive=True, code=True)
+    assert "This is a block comment" not in compressed
+    assert "This is a line comment" not in compressed
+    assert "function calculate" in compressed
+    assert "let sum" in compressed
+
+def test_universal_code_stripper_edge_cases():
+    text = """function test() {
+    let url = "https://example.com";
+    let block = "/* not a comment */";
+    // actual comment
+    return url;
+}
+"""
+    compressed = compress_text(text, aggressive=True, code=True)
+    assert "https://example.com" in compressed
+    assert "/* not a comment */" in compressed
+    assert "actual comment" not in compressed
+
 if __name__ == "__main__":
     pytest.main([__file__])

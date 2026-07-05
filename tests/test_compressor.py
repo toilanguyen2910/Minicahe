@@ -47,5 +47,38 @@ def test_sentence_dedup():
     # This means 'hello' will be preserved in the next sentence.
     assert compressed.lower().count("hello") == 3
 
+def test_logical_blacklist():
+    text = "The vendor shall not be liable for the damages. No exceptions will be made. I will never agree."
+    compressed = compress_text(text, aggressive=True)
+    # Even in aggressive mode, 'not', 'no', 'never' should survive.
+    assert "not" in compressed.lower()
+    assert "no" in compressed.lower()
+    assert "never" in compressed.lower()
+
+def test_conservative_mode():
+    text = "The quick brown fox jumps over the lazy dog. The quick brown fox is very fast."
+    compressed_agg = compress_text(text, mode="aggressive")
+    compressed_con = compress_text(text, mode="conservative")
+    
+    # Aggressive drops "the", "is", "very"
+    assert "very" not in compressed_agg.lower()
+    
+    # Conservative drops duplicate "quick", "brown", "fox" but keeps "the", "is", "very"
+    assert "very" in compressed_con.lower()
+    assert "the" in compressed_con.lower()
+    
+    # The second "quick brown fox" (and the first) will actually be replaced by QBF!
+    # Because auto-acronymizer is active in both modes.
+    assert "qbf" in compressed_con.lower()
+    assert "quick" not in compressed_con.lower()
+
+def test_pii_masking():
+    text = "Contact me at john.doe@example.com or call 123-456-7890."
+    compressed = compress_text(text, aggressive=True, mask_pii=True)
+    assert "john.doe@example.com" not in compressed
+    assert "[EMAIL]" in compressed
+    assert "[REDACTED]" in compressed
+
 if __name__ == "__main__":
     pytest.main([__file__])
+

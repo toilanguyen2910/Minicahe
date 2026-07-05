@@ -15,7 +15,12 @@ class StatsTracker:
 
     def __init__(self, db_path: Optional[str] = None):
         if db_path is None:
-            db_path = os.path.join(str(Path.home()), ".minicahe", "stats.json")
+            # Check environment variable first
+            env_db = os.environ.get("MINICAHE_STATS_DB")
+            if env_db:
+                db_path = env_db
+            else:
+                db_path = os.path.join(str(Path.home()), ".minicahe", "stats.json")
         self.db_path = db_path
         self._ensure_db()
 
