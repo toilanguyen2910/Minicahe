@@ -72,9 +72,17 @@ minicahe stats
 
 Minicahe includes a built-in strict benchmark (`tests/benchmark.py`) that evaluates compression based on precision (Keyword Overlap Ratio).
 
+| Metric | Phase 1 (Vocabulary Filter) | Phase 2 & 3 (Minicahe Aggressive) |
+| :--- | :---: | :---: |
+| **Token Reduction** | ~20% | **>50%** |
+| **Keyword Overlap** | ~98% | **>95%** |
+| **Speed (Latency)** | Low | **Zero (Pure String Ops)** |
+| **Code Compression** | ❌ None | ✅ AST-Aware |
+| **Auto-Acronyms** | ❌ None | ✅ Yes |
+
 ```text
 ======================================================================
-  MINICAHE BENCHMARK - TOKEN REDUCTION & QUALITY
+  MINICAHE BENCHMARK - TOKEN REDUCTION & KEYWORD OVERLAP
 ======================================================================
 Mode NORMAL:
   Avg Token Reduction: 4.4% 
@@ -85,6 +93,12 @@ Mode AGGRESSIVE:
   Avg Keyword Overlap Ratio: 95.3% (🎯 TARGET MET >90%)
 ======================================================================
 ```
+
+### How Keyword Overlap is Calculated
+The **Keyword Overlap Ratio** is a custom precision metric designed specifically for LLM context compression, calculated as a weighted average:
+- **60% Keyword Set Intersection (`kw`)**: Measures the percentage of long (>3 chars) non-stop words from the original text that survive the compression process.
+- **40% Sequence Matcher (`seq`)**: Uses Python's `difflib.SequenceMatcher` to measure the contiguous alignment between the original and compressed token sequences.
+- **Code Mode Override**: If the file contains valid Python source code, Minicahe validates that the compressed code still compiles into an identical Abstract Syntax Tree (AST), yielding a perfect 1.0 (100%) score since the core logic remains mathematically intact.
 
 ## 🏗️ Architecture
 
