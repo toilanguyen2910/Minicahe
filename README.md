@@ -44,6 +44,15 @@ can change meaning, especially in short instructions or repeated statements:
 
 ### Installation
 
+For the GitHub `v1.0.1` fixes, install from the tagged source:
+
+```bash
+python -m pip install "git+https://github.com/toilanguyen2910/Minicahe.git@v1.0.1"
+```
+
+The PyPI package is still at 1.0.0 until a separate PyPI upload is made.
+For local development, clone and install in editable mode:
+
 ```bash
 # Clone the repository
 git clone https://github.com/toilanguyen2910/Minicahe.git

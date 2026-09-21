@@ -4,7 +4,7 @@ Tất cả các thay đổi đáng chú ý của dự án Minicahe sẽ được
 
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), và dự án tuân thủ [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.1] - 2026-09-21
 ### Changed in this update
 - Giữ lại các giá trị số ở chế độ nén mạnh để tránh mất thông số và số phiên bản.
 - Giữ mã Python hợp lệ khi xóa docstring duy nhất trong một block.
