@@ -1,40 +1,44 @@
 # Minicahe 🪨
 
-> **Extreme LLM Context Compressor** — Maximize your context window, minimize your costs.
+> **Rule-based text compressor for LLM prompts and logs**
 
-Minicahe is a highly optimized, rule-based text compression tool inspired by [headroom](https://github.com/headroomlabs-ai/headroom), [codebase-memory-mcp](https://github.com/DeusData/codebase-memory-mcp), and [caveman](https://github.com/JuliusBrussee/caveman). 
+Minicahe is a rule-based text compression tool inspired by [headroom](https://github.com/headroomlabs-ai/headroom), [codebase-memory-mcp](https://github.com/DeusData/codebase-memory-mcp), and [caveman](https://github.com/JuliusBrussee/caveman).
 
-By acting as a proxy layer before sending text to Large Language Models (LLMs), Minicahe aggressively strips away non-essential tokens while perfectly preserving the core semantic keywords.
+Use the CLI or Python API to shorten text before sending it to an LLM. The
+aggressive mode can remove useful context, so review its output before using
+it for instructions, legal text, code, or other high-stakes material.
 
-🔥 **The Result:** Guaranteed **>50% token reduction** while maintaining **>90% precision quality**.
+The four bundled benchmark samples currently average **45.8% token reduction**
+in aggressive mode. This is a small sample, not a guarantee for other inputs.
 
 ---
 
 ## ✨ Features
 
-- 🚀 **Extreme Token Reduction**: Consistently halves your token usage (50%+ reduction on average).
-- 🧠 **Smart Code Compression**: Dedicated mode for Python code to strip docstrings, comments, and empty lines without breaking AST.
+- 🚀 **Configurable reduction**: Choose normal, conservative, or aggressive mode according to your tolerance for information loss.
+- 🧠 **Code compression**: A Python-focused mode removes comments and some standalone strings; run your tests on the result before executing it.
 - 🔄 **Auto-Acronymizer**: Automatically finds frequent long phrases and replaces them with acronyms.
 - 🔑 **Aims to preserve key domain terms**: Protects critical domain-specific keywords from being lost, and allows user whitelists.
-- ⚡ **Zero-Latency**: Pure Python string manipulation. No LLM calls required to compress text.
-- 📊 **Tiktoken Integration**: Accurate token counting using OpenAI's `tiktoken` (with a fast fallback estimator).
+- ⚡ **Local processing**: Compression itself makes no LLM calls; runtime depends on input size.
+- 📊 **Tiktoken Integration**: Counts tokens for supported model encodings, with an approximate fallback estimator.
 - 🛠️ **CLI Ready**: Compress strings, files, or pipe data directly from your terminal.
 
 ## 🔬 How It Works (The Magic)
 
-To achieve the impossible balance of halving token size while keeping LLM comprehension intact, Minicahe employs three extreme techniques in its `Aggressive` mode:
+Aggressive mode uses the following text transformations. They are lossy and
+can change meaning, especially in short instructions or repeated statements:
 
 1. **Keyword Deduplication**: 
-   If a long technical keyword (e.g., `transformer`, `architecture`) appears multiple times in your context, Minicahe keeps it once and drops the redundancies. The LLM still receives the exact vocabulary needed for its attention mechanism, but you save massive amounts of tokens.
+   Repeated long words can be removed within a sentence. This can change emphasis or relationships.
    
 2. **Auto-Acronymizer**: 
-   Dynamically scans for frequent long N-grams (e.g. "natural language processing") and injects acronyms (e.g. "NLP") to save tokens without losing meaning.
+   Repeated phrases can be replaced with generated acronyms. Review unfamiliar abbreviations in the result.
 
 3. **Extreme Lexical Trimming**: 
-   Minicahe ruthlessly strips out all stop words `< 4` characters (`the`, `a`, `to`, `is`, `in`, `on`, etc.) and heavily filters longer filler words (`which`, `would`, `should`, `about`, `there`). LLMs are incredibly robust to broken grammar and can perfectly reconstruct the meaning from the remaining keyword salad.
+   Short and common words are removed except protected words and numeric values. This can remove conditions or grammatical relationships.
    
 4. **Whitespace Optimization**: 
-   Removes unnecessary spaces around punctuation (e.g., `word ,` -> `word,`). Tiktoken tokenizes punctuation correctly without spaces, giving you cleaner outputs without generating garbage tokens.
+   Collapses repeated whitespace in text mode.
 
 ## 🚀 Quick Start
 
@@ -70,35 +74,19 @@ minicahe stats
 
 ## 📊 Benchmark
 
-Minicahe includes a built-in strict benchmark (`tests/benchmark.py`) that evaluates compression based on precision (Keyword Overlap Ratio).
+Run the four bundled samples with `python tests/benchmark.py`. Results from
+Python 3.11 with `tiktoken` installed:
 
-| Metric | Phase 1 (Vocabulary Filter) | Phase 2 & 3 (Minicahe Aggressive) |
-| :--- | :---: | :---: |
-| **Token Reduction** | ~20% | **>50%** |
-| **Keyword Overlap** | ~98% | **>95%** |
-| **Speed (Latency)** | Low | **Zero (Pure String Ops)** |
-| **Code Compression** | ❌ None | ✅ AST-Aware |
-| **Auto-Acronyms** | ❌ None | ✅ Yes |
+| Mode | Average token reduction | Average lexical recall |
+| --- | ---: | ---: |
+| Normal | 4.4% | 99.7% |
+| Aggressive | 45.8% | 76.9% |
 
-```text
-======================================================================
-  MINICAHE BENCHMARK - TOKEN REDUCTION & KEYWORD OVERLAP
-======================================================================
-Mode NORMAL:
-  Avg Token Reduction: 4.4% 
-  Avg Keyword Overlap Ratio: 99.8% 
-
-Mode AGGRESSIVE:
-  Avg Token Reduction: 50.9% (🎯 TARGET MET >50%)
-  Avg Keyword Overlap Ratio: 95.3% (🎯 TARGET MET >90%)
-======================================================================
-```
-
-### How Keyword Overlap is Calculated
-The **Keyword Overlap Ratio** is a custom precision metric designed specifically for LLM context compression, calculated as a weighted average:
-- **60% Keyword Set Intersection (`kw`)**: Measures the percentage of long (>3 chars) non-stop words from the original text that survive the compression process.
-- **40% Sequence Matcher (`seq`)**: Uses Python's `difflib.SequenceMatcher` to measure the contiguous alignment between the original and compressed token sequences.
-- **Code Mode Override**: If the file contains valid Python source code, Minicahe validates that the compressed code still compiles into an identical Abstract Syntax Tree (AST), yielding a perfect 1.0 (100%) score since the core logic remains mathematically intact.
+Lexical recall is the share of unique, non-stop words of four or more letters
+that remain in the output. It does **not** measure preserved meaning or LLM
+answer quality. The benchmark contains only four hand-written samples, one of
+which is Python code. Results will vary with the text and tokenizer. Test on
+your own data before using compressed text in a production workflow.
 
 ## 🏗️ Architecture
 
@@ -114,9 +102,9 @@ src/minicahe/
 
 ## 💡 Use Cases
 
-- **RAG Pipelines**: Compress retrieved documents before injecting them into the LLM prompt. Fit double the documents in the same context window!
-- **Agentic Memory**: Store massive logs and conversation history (like `codebase-memory-mcp`) at a fraction of the cost.
-- **Codebase Analysis**: Feed entire codebases into Claude/GPT-4 by stripping out structural bloat and redundant keywords.
+- **RAG Pipelines**: Experiment with shortening retrieved documents while checking whether answers remain grounded in the source.
+- **Agent Memory**: Reduce repetitive logs after separating facts that must be retained.
+- **Codebase Analysis**: Shorten snippets for exploration; keep the original source available for verification.
 
 ## ⚖️ License
 

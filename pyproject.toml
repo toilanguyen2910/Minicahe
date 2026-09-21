@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = {text = "MIT"}
 authors = [
-    {name = "Vu Hoang Khoi Nguyen (toilanguyen2910)", email = "toilanguyen2910@example.com"}
+    {name = "Vu Hoang Khoi Nguyen (toilanguyen2910)"}
 ]
 keywords = ["tokens", "compression", "llm", "cli", "tiktoken", "openai", "claude"]
 classifiers = [

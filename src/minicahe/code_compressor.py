@@ -17,9 +17,21 @@ class CodeCompressor:
         
         try:
             import ast
-            ast.parse(source_code)
+            tree = ast.parse(source_code)
         except Exception:
             return self._regex_compress(source_code)
+
+        # A suite containing only a docstring needs a statement after that
+        # string is removed, otherwise the output is invalid Python.
+        placeholder_positions = set()
+        for node in ast.walk(tree):
+            for field in ("body", "orelse", "finalbody"):
+                suite = getattr(node, field, None)
+                if (isinstance(suite, list) and len(suite) == 1
+                        and isinstance(suite[0], ast.Expr)
+                        and isinstance(suite[0].value, ast.Constant)
+                        and isinstance(suite[0].value.value, str)):
+                    placeholder_positions.add((suite[0].lineno, suite[0].col_offset))
             
         try:
             tokens = tokenize.generate_tokens(io_obj.readline)
@@ -49,8 +61,11 @@ class CodeCompressor:
                         # Wait, actually we can just check if the string contains """ or '''
                         if token_string.startswith('"""') or token_string.startswith("'''"):
                             self._stats["docstrings_removed"] += 1
-                            prev_toktype = token_type
-                            continue
+                            if (start_line, start_col) in placeholder_positions:
+                                token_string = "pass"
+                            else:
+                                prev_toktype = token_type
+                                continue
                         
                 if start_line > last_lineno:
                     last_col = 0

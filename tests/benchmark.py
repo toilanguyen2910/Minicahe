@@ -1,6 +1,10 @@
-"""Minicahe Benchmark - evaluate token reduction and quality."""
+"""Small sample benchmark for token reduction and lexical overlap.
 
-import sys, os, difflib, re
+Lexical overlap is not a measure of semantic fidelity or downstream model
+performance. The four bundled samples are illustrative, not representative.
+"""
+
+import sys, os, re
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
 from minicahe.compressor import compress_text
@@ -41,45 +45,19 @@ SAMPLES = [
     },
 ]
 
-# placeholder
 def calc_similarity(original, compressed):
-    ow = original.lower().split()
-    cw = compressed.lower().split()
-    if not ow:
-        return 1.0
-        
-    # Ignore stop words when calculating keyword preservation
+    """Return recall of unique, non-stop words with four or more letters."""
     stop_words = {'that', 'this', 'have', 'from', 'they', 'with', 'what', 'were', 'been', 'some', 'very', 'just', 'really', 'actually', 'basically'}
     ok = set(w for w in re.findall(r'\b[a-z]{4,}\b', original.lower()) if w not in stop_words)
     ck = set(w for w in re.findall(r'\b[a-z]{4,}\b', compressed.lower()) if w not in stop_words)
-    
     if not ok:
-        return 0.0
-        
-    # If this is code, and it compiles, the logic is 100% preserved even if words are dropped
-    try:
-        import ast
-        ast.parse(original)
-        ast.parse(compressed)
-        # It's valid python code, and we are using CodeCompressor, so semantic logic is preserved.
-        # But we still calculate ratio. Let's just return 1.0 for perfect compilation match in code mode?
-        # Actually, let's just let it return 1.0 if it's valid code and loss is only comments.
-        is_code = ('def ' in original or 'class ' in original)
-        if is_code:
-            return 1.0
-    except Exception:
-        pass
-        
-    kw = len(ok & ck) / len(ok)
-    matcher = difflib.SequenceMatcher(None, ow, cw)
-    M = sum(triple.size for triple in matcher.get_matching_blocks())
-    seq = M / len(cw) if len(cw) > 0 else 1.0
-    return round(0.6 * kw + 0.4 * seq, 4)
+        return 1.0
+    return round(len(ok & ck) / len(ok), 4)
 
 
 def run():
     print("=" * 70)
-    print("  MINICAHE BENCHMARK - TOKEN REDUCTION & KEYWORD OVERLAP")
+    print("  MINICAHE SAMPLE BENCHMARK - TOKEN REDUCTION & LEXICAL RECALL")
     print("=" * 70)
     print("Tiktoken:", "OK" if HAS_TIKTOKEN else "FALLBACK")
     print()
@@ -102,7 +80,7 @@ def run():
             ql = round(calc_similarity(t, c) * 100, 1)
             tk = "OK" if sp >= target_token else "NO"
             qk = "OK" if ql >= target_qual else "NO"
-            print("  [%9s] %4d tok | -%5.1f%% [%s] | QL: %5.1f%% [%s]" % (mn, ct, sp, tk, ql, qk))
+            print("  [%9s] %4d tok | -%5.1f%% [%s] | Lexical recall: %5.1f%% [%s]" % (mn, ct, sp, tk, ql, qk))
             (ar if m else nr).append({"s": sp, "q": ql})
     
     print()
@@ -119,11 +97,12 @@ def run():
         st = "TARGET MET!" if (a_s >= target_token and a_q >= target_qual) else "NOT MET"
         print("  Mode %s:" % lb)
         print("    Avg Token Reduction: %.1f%% (%d/%d met %d%%)" % (a_s, p_s, n, target_token))
-        print("    Avg Keyword Overlap Ratio:   %.1f%% (%d/%d met %d%%)" % (a_q, p_q, n, target_qual))
+        print("    Avg Lexical Recall: %.1f%% (%d/%d met %d%%)" % (a_q, p_q, n, target_qual))
         print("    => %s" % st)
     
     print()
     print("=" * 70)
+    print("Lexical recall does not establish meaning preservation or answer quality.")
 
 
 if __name__ == "__main__":

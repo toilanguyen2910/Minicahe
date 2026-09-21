@@ -5,6 +5,12 @@ Tất cả các thay đổi đáng chú ý của dự án Minicahe sẽ được
 Định dạng dựa trên [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), và dự án tuân thủ [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed in this update
+- Giữ lại các giá trị số ở chế độ nén mạnh để tránh mất thông số và số phiên bản.
+- Giữ mã Python hợp lệ khi xóa docstring duy nhất trong một block.
+- Đổi benchmark sang chỉ số lexical recall minh bạch; bỏ suy luận rằng code biên dịch được thì giữ nguyên ngữ nghĩa.
+- Đính chính README theo kết quả benchmark hiện tại và thêm CI chạy test trên Python 3.9, 3.11, 3.13.
+
 ### Added
 - Thêm cờ `--preserve-words` cho phép người dùng cấu hình whitelist bảo vệ các từ khóa quan trọng khỏi bộ lọc nén (#12).
 - Thêm cờ `--no-acronym` cho phép vô hiệu hóa thuật toán viết tắt (Auto-Acronymizer) nếu cần (#15).

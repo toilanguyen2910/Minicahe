@@ -1,6 +1,4 @@
-"""Compressor module for Minicahe v3 - Extreme compression engine.
-Target: >50% token reduction while preserving >90% quality.
-"""
+"""Rule-based text compressor with optional lossy modes."""
 
 import re
 from collections import Counter
@@ -72,6 +70,14 @@ class CompressorV2:
                 if clean_alnum in self.preserve_words:
                     kept.append(w)
                     if w.endswith('.') or w.endswith('!') or w.endswith('?'):
+                        seen_keywords.clear()
+                    continue
+
+                # Numeric values and version-like tokens carry meaning even
+                # when their alphabetic portion is short or empty.
+                if any(char.isdigit() for char in clean_alnum):
+                    kept.append(w)
+                    if w.endswith(('.', '!', '?')):
                         seen_keywords.clear()
                     continue
 
